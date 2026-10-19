@@ -298,6 +298,9 @@ io.ktor:ktor-server-double-receive-js/sources.jar
 io.ktor:ktor-server-double-receive-wasm-js/.klib
 io.ktor:ktor-server-double-receive-wasm-js/javadoc.jar
 io.ktor:ktor-server-double-receive-wasm-js/sources.jar
+io.ktor:ktor-server-fetch-js/.klib
+io.ktor:ktor-server-fetch-js/javadoc.jar
+io.ktor:ktor-server-fetch-js/sources.jar
 io.ktor:ktor-server-forwarded-header-js/.klib
 io.ktor:ktor-server-forwarded-header-js/javadoc.jar
 io.ktor:ktor-server-forwarded-header-js/sources.jar

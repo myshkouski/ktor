@@ -1,0 +1,42 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.ktor:ktor-server-fetch>
+abstract fun interface io.ktor.server.fetch/FetchHandler { // io.ktor.server.fetch/FetchHandler|null[0]
+    abstract fun fetch(org.w3c.fetch/Request): kotlin.js/Promise<org.w3c.fetch/Response> // io.ktor.server.fetch/FetchHandler.fetch|fetch(org.w3c.fetch.Request){}[0]
+}
+
+final class io.ktor.server.fetch/FetchApplicationEngine : io.ktor.server.engine/BaseApplicationEngine, kotlinx.coroutines/CoroutineScope { // io.ktor.server.fetch/FetchApplicationEngine|null[0]
+    constructor <init>(io.ktor.server.application/ApplicationEnvironment, io.ktor.events/Events, kotlin/Boolean, io.ktor.server.fetch/FetchApplicationEngine.Configuration = ..., kotlin/Function0<io.ktor.server.application/Application>) // io.ktor.server.fetch/FetchApplicationEngine.<init>|<init>(io.ktor.server.application.ApplicationEnvironment;io.ktor.events.Events;kotlin.Boolean;io.ktor.server.fetch.FetchApplicationEngine.Configuration;kotlin.Function0<io.ktor.server.application.Application>){}[0]
+
+    final val application // io.ktor.server.fetch/FetchApplicationEngine.application|{}application[0]
+        final fun <get-application>(): io.ktor.server.application/Application // io.ktor.server.fetch/FetchApplicationEngine.application.<get-application>|<get-application>(){}[0]
+    final val configuration // io.ktor.server.fetch/FetchApplicationEngine.configuration|{}configuration[0]
+        final fun <get-configuration>(): io.ktor.server.fetch/FetchApplicationEngine.Configuration // io.ktor.server.fetch/FetchApplicationEngine.configuration.<get-configuration>|<get-configuration>(){}[0]
+    final val coroutineContext // io.ktor.server.fetch/FetchApplicationEngine.coroutineContext|{}coroutineContext[0]
+        final fun <get-coroutineContext>(): kotlin.coroutines/CoroutineContext // io.ktor.server.fetch/FetchApplicationEngine.coroutineContext.<get-coroutineContext>|<get-coroutineContext>(){}[0]
+    final val fetch // io.ktor.server.fetch/FetchApplicationEngine.fetch|{}fetch[0]
+        final fun <get-fetch>(): io.ktor.server.fetch/FetchHandler // io.ktor.server.fetch/FetchApplicationEngine.fetch.<get-fetch>|<get-fetch>(){}[0]
+
+    final fun start(kotlin/Boolean): io.ktor.server.engine/ApplicationEngine // io.ktor.server.fetch/FetchApplicationEngine.start|start(kotlin.Boolean){}[0]
+    final fun stop(kotlin/Long, kotlin/Long) // io.ktor.server.fetch/FetchApplicationEngine.stop|stop(kotlin.Long;kotlin.Long){}[0]
+    final suspend fun startSuspend(kotlin/Boolean): io.ktor.server.engine/ApplicationEngine // io.ktor.server.fetch/FetchApplicationEngine.startSuspend|startSuspend(kotlin.Boolean){}[0]
+    final suspend fun stopSuspend(kotlin/Long, kotlin/Long) // io.ktor.server.fetch/FetchApplicationEngine.stopSuspend|stopSuspend(kotlin.Long;kotlin.Long){}[0]
+
+    final class Configuration : io.ktor.server.engine/BaseApplicationEngine.Configuration { // io.ktor.server.fetch/FetchApplicationEngine.Configuration|null[0]
+        constructor <init>() // io.ktor.server.fetch/FetchApplicationEngine.Configuration.<init>|<init>(){}[0]
+    }
+}
+
+final object io.ktor.server.fetch/Fetch : io.ktor.server.engine/ApplicationEngineFactory<io.ktor.server.fetch/FetchApplicationEngine, io.ktor.server.fetch/FetchApplicationEngine.Configuration> { // io.ktor.server.fetch/Fetch|null[0]
+    final fun configuration(kotlin/Function1<io.ktor.server.fetch/FetchApplicationEngine.Configuration, kotlin/Unit>): io.ktor.server.fetch/FetchApplicationEngine.Configuration // io.ktor.server.fetch/Fetch.configuration|configuration(kotlin.Function1<io.ktor.server.fetch.FetchApplicationEngine.Configuration,kotlin.Unit>){}[0]
+    final fun create(io.ktor.server.application/ApplicationEnvironment, io.ktor.events/Events, kotlin/Boolean, io.ktor.server.fetch/FetchApplicationEngine.Configuration, kotlin/Function0<io.ktor.server.application/Application>): io.ktor.server.fetch/FetchApplicationEngine // io.ktor.server.fetch/Fetch.create|create(io.ktor.server.application.ApplicationEnvironment;io.ktor.events.Events;kotlin.Boolean;io.ktor.server.fetch.FetchApplicationEngine.Configuration;kotlin.Function0<io.ktor.server.application.Application>){}[0]
+}
+
+final object io.ktor.server.fetch/FetchModule { // io.ktor.server.fetch/FetchModule|null[0]
+    final fun asDefaultExport(dynamic): dynamic // io.ktor.server.fetch/FetchModule.asDefaultExport|asDefaultExport(<dynamic>){}[0]
+}

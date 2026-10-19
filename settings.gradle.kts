@@ -52,6 +52,7 @@ projects {
         +"ktor-server-tomcat-jakarta"
         +"ktor-server-netty"
         +"ktor-server-cio"
+        +"ktor-server-fetch"
 
         +"ktor-server-test-host"
         +"ktor-server-test-base"

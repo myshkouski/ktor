@@ -528,6 +528,10 @@ io.ktor:ktor-server-double-receive/.jar
 io.ktor:ktor-server-double-receive/javadoc.jar
 io.ktor:ktor-server-double-receive/kotlin-tooling-metadata.json
 io.ktor:ktor-server-double-receive/sources.jar
+io.ktor:ktor-server-fetch/.jar
+io.ktor:ktor-server-fetch/javadoc.jar
+io.ktor:ktor-server-fetch/kotlin-tooling-metadata.json
+io.ktor:ktor-server-fetch/sources.jar
 io.ktor:ktor-server-forwarded-header-jvm/.jar
 io.ktor:ktor-server-forwarded-header-jvm/javadoc.jar
 io.ktor:ktor-server-forwarded-header-jvm/sources.jar
