@@ -41,6 +41,10 @@ internal fun Request.toApplicationCall(
     )
 }
 
+private val Request.body: ReadableStream<Uint8Array>
+    @Suppress("UnsafeCastFromDynamic")
+    get() = asDynamic().body
+
 private fun org.w3c.fetch.Headers.toKtorHeaders(): Headers = Headers.build {
     this@toKtorHeaders.asDynamic().forEach { value: String, key: String ->
         append(key, value)
@@ -56,9 +60,7 @@ private fun ResponseHeaders.toJsHeaders(): dynamic {
 }
 
 private fun Request.readBody(): ByteReadChannel {
-    @Suppress("UnsafeCastFromDynamic")
-    val stream: ReadableStream<Uint8Array> = asDynamic().body ?: return ByteReadChannel.Empty
-    return channelFromStream(stream)
+    return channelFromStream(body)
 }
 
 private fun channelFromStream(stream: ReadableStream<Uint8Array>): ByteReadChannel =
