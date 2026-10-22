@@ -140,8 +140,8 @@ private class TestServer(
             for ((name, value) in headers) jsHeaders[name] = value
             init.headers = jsHeaders
         }
-        val request: Request = js("new Request(url, init)")
-        return server.engine.fetch.fetch(request).await()
+        val request = Request(url, init)
+        return server.engine.handleFetch(request)
     }
 }
 
