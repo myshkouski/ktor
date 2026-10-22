@@ -41,7 +41,7 @@ internal fun Request.toApplicationCall(
     )
 }
 
-private val Request.body: ReadableStream<Uint8Array>
+private val Request.body: ReadableStream<Uint8Array>?
     @Suppress("UnsafeCastFromDynamic")
     get() = asDynamic().body
 
@@ -63,8 +63,8 @@ private fun Request.readBody(): ByteReadChannel {
     return channelFromStream(body)
 }
 
-private fun channelFromStream(stream: ReadableStream<Uint8Array>): ByteReadChannel =
-    ReadableStreamByteReadChannel(stream)
+private fun channelFromStream(stream: ReadableStream<Uint8Array>?): ByteReadChannel =
+    stream?.let { ReadableStreamByteReadChannel(it) } ?: ByteReadChannel.Empty
 
 @Suppress("UnsafeCastFromDynamic")
 private fun Uint8Array.asByteArray(): ByteArray = Int8Array(buffer, byteOffset, length).asDynamic()
