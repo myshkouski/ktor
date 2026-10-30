@@ -9,7 +9,14 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.utils.io.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.await
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.promise
 import kotlinx.io.Buffer
 import kotlinx.io.IOException
 import kotlinx.io.Source
@@ -20,6 +27,18 @@ import org.w3c.fetch.Response
 import org.w3c.fetch.ResponseInit
 import kotlin.coroutines.CoroutineContext
 import kotlin.js.Promise
+import org.w3c.fetch.Headers as FetchHeaders
+
+private val hopByHopHeaders = setOf(
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade"
+)
 
 internal fun Request.toApplicationCall(
     application: Application,
@@ -36,6 +55,8 @@ internal fun Request.toApplicationCall(
         uri = parsedUrl.encodedPathAndQuery,
         version = HttpProtocolVersion.HTTP_1_1.toString(),
         scheme = parsedUrl.protocol.name,
+        host = parsedUrl.host,
+        port = parsedUrl.port,
         headers = headers,
         body = readBody()
     )
@@ -51,12 +72,16 @@ private fun org.w3c.fetch.Headers.toKtorHeaders(): Headers = Headers.build {
     }
 }
 
-private fun ResponseHeaders.toJsHeaders(): dynamic {
-    val jsHeaders = js("({})")
+private fun ResponseHeaders.toFetchHeaders(stripContentLength: Boolean): FetchHeaders {
+    val headers = FetchHeaders()
     allValues().forEach { name, values ->
-        jsHeaders[name] = values.joinToString(",")
+        if (name.lowercase() in hopByHopHeaders) return@forEach
+        if (stripContentLength && name.equals(HttpHeaders.ContentLength, ignoreCase = true)) return@forEach
+        for (value in values) {
+            headers.append(name, value)
+        }
     }
-    return jsHeaders
+    return headers
 }
 
 private fun Request.readBody(): ByteReadChannel {
@@ -128,30 +153,95 @@ private class ReadableStreamByteReadChannel(private val stream: ReadableStream<U
 
     override fun cancel(cause: Throwable?) {
         if (closed) return
-        this.cause = cause ?: IOException("Channel was cancelled")
+        val cancelCause = cause ?: IOException("Channel was cancelled")
+        this.cause = cancelCause
         closed = true
-        reader?.cancel(this.cause)?.catch { }
+        val reader = reader ?: runCatching { stream.getReader() }.getOrNull() ?: return
+        reader.cancel(cancelCause).catch { }
     }
 }
 
 @Suppress("UnsafeCastFromDynamic")
-internal suspend fun FetchApplicationCall.toWebResponse(): Response {
+internal fun FetchApplicationCall.toWebResponse(
+    scope: CoroutineScope,
+    bodyChannel: ByteReadChannel,
+    requestJob: CompletableJob
+): Response {
     val status = response.status() ?: HttpStatusCode.OK
-    val bytes = response.bodyBytes()
-
-    val webHeaders = response.headers.toJsHeaders()
-
     val method = request.httpMethod
-    val body: dynamic = if (
-        bytes.isEmpty() ||
-        method == HttpMethod.Head ||
+
+    val omitBody = method == HttpMethod.Head ||
         status == HttpStatusCode.NoContent ||
         status == HttpStatusCode.NotModified
-    ) {
+    val stripContentLength = status == HttpStatusCode.NoContent || status == HttpStatusCode.NotModified
+
+    val body: dynamic = if (omitBody) {
+        // The response must not have a body, but the application may still be writing one.
+        scope.launch {
+            runCatching { bodyChannel.discard() }
+            requestJob.complete()
+        }
         null
     } else {
-        Uint8Array(bytes.toTypedArray())
+        bodyChannel.toReadableStream(scope, requestJob)
     }
 
-    return Response(body, ResponseInit(status.value.toShort(), status.description, webHeaders))
+    val headers = response.headers.toFetchHeaders(stripContentLength)
+
+    return Response(body, ResponseInit(status.value.toShort(), status.description, headers))
+}
+
+/**
+ * Converts a response body channel to a pull-based [ReadableStream].
+ *
+ * Each `pull` reads at most one chunk from [bodyChannel] and enqueues it. This provides backpressure: while the
+ * consumer does not read, `pull` is not called and the application eventually suspends on the bounded channel.
+ */
+@Suppress("UnsafeCastFromDynamic")
+private fun ByteReadChannel.toReadableStream(
+    scope: CoroutineScope,
+    requestJob: CompletableJob
+): dynamic {
+    val buffer = ByteArray(RESPONSE_BODY_CHUNK_SIZE)
+    val source = js("({})")
+
+    source.pull = { controller: dynamic ->
+        // Resume and read without an extra dispatch when bytes are already buffered, so the first chunk
+        // reaches the runtime as soon as the application flushes it.
+        scope.promise(Dispatchers.Unconfined, start = CoroutineStart.UNDISPATCHED) {
+            val read = readAvailable(buffer)
+            when {
+                read < 0 -> {
+                    val cause = closedCause
+                    if (cause != null) {
+                        controller.error(cause)
+                    } else {
+                        controller.close()
+                    }
+                    requestJob.complete()
+                }
+
+                read > 0 -> {
+                    controller.enqueue(buffer.copyOf(read).toUint8Array(read))
+                }
+            }
+            Unit
+        }
+    }
+
+    source.cancel = { reason: dynamic ->
+        val cause = reason as? Throwable ?: CancellationException("Response body was cancelled")
+        cancel(cause)
+        requestJob.cancel()
+    }
+
+    return js("new ReadableStream(source)")
+}
+
+private const val RESPONSE_BODY_CHUNK_SIZE = 8 * 1024
+
+@Suppress("UnsafeCastFromDynamic")
+private fun ByteArray.toUint8Array(length: Int): Uint8Array {
+    val bytes = this
+    return js("new Uint8Array(bytes.buffer, bytes.byteOffset, length)")
 }

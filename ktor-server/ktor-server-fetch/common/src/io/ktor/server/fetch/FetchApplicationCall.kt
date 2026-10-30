@@ -17,16 +17,22 @@ internal class FetchApplicationCall(
     uri: String,
     version: String,
     scheme: String,
+    host: String,
+    port: Int,
     headers: Headers,
     body: ByteReadChannel
 ) : BaseApplicationCall(application) {
 
     override val request: FetchApplicationRequest =
-        FetchApplicationRequest(this, method, uri, version, scheme, headers, body)
+        FetchApplicationRequest(this, method, uri, version, scheme, host, port, headers, body)
 
     override val response: FetchApplicationResponse = FetchApplicationResponse(this)
 
     init {
         putResponseAttribute()
+    }
+
+    internal fun cancelRequestBody() {
+        request.cancelBody()
     }
 }

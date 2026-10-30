@@ -15,6 +15,8 @@ internal class FetchApplicationRequest(
     private val requestUri: String,
     private val httpVersion: String,
     private val scheme: String,
+    private val host: String,
+    private val port: Int,
     private val requestHeaders: Headers,
     private val body: ByteReadChannel
 ) : BaseApplicationRequest(call) {
@@ -22,6 +24,15 @@ internal class FetchApplicationRequest(
     override val engineHeaders: Headers get() = requestHeaders
 
     override val engineReceiveChannel: ByteReadChannel get() = body
+
+    private val remoteHost: String
+        get() = requestHeaders["CF-Connecting-IP"]
+            ?: requestHeaders["X-Real-IP"]
+            ?: requestHeaders[HttpHeaders.XForwardedFor]
+                ?.substringBefore(',')
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+            ?: "unknown"
 
     override val local: RequestConnectionPoint = object : RequestConnectionPoint {
         override val uri: String get() = requestUri
@@ -43,13 +54,12 @@ internal class FetchApplicationRequest(
         )
         override val host: String get() = localHost
 
-        override val localPort: Int get() = serverPort
-        override val serverPort: Int get() = if (scheme == "https") 443 else 80
+        override val localPort: Int get() = this@FetchApplicationRequest.port
+        override val serverPort: Int get() = this@FetchApplicationRequest.port
         override val localHost: String get() = serverHost
-        override val serverHost: String
-            get() = requestHeaders[HttpHeaders.Host]?.substringBefore(":") ?: "localhost"
+        override val serverHost: String get() = this@FetchApplicationRequest.host.ifEmpty { "localhost" }
         override val localAddress: String get() = localHost
-        override val remoteHost: String get() = localHost
+        override val remoteHost: String get() = this@FetchApplicationRequest.remoteHost
         override val remotePort: Int get() = 0
         override val remoteAddress: String get() = remoteHost
 
@@ -68,4 +78,8 @@ internal class FetchApplicationRequest(
     }
 
     override val cookies: RequestCookies = RequestCookies(this)
+
+    internal fun cancelBody() {
+        body.cancel(null)
+    }
 }
